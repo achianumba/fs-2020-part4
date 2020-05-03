@@ -1,12 +1,5 @@
-const { connect, Schema, model } = require("mongoose");
+const { connect, Schema, model, connection } = require("mongoose");
 const { info, error } = require("../utils/logger");
-
-connect(require("../utils/config").MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => info("Connected to database successfully"))
-  .catch((err) => error(`UNABLE TO CONNECT TO DATABASE\n`));
 
 const blogSchema = new Schema({
   title: String,
@@ -17,10 +10,33 @@ const blogSchema = new Schema({
 
 const Blog = model("Blog", blogSchema);
 
-const getAllBlogs = () => Blog.find();
-const newBlog = (blog) => new Blog(blog);
+const callDb = () => {
+  return connect(require("../utils/config").MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+    .then(() => info("Connected to database successfully"))
+    .catch((err) => error(`UNABLE TO CONNECT TO DATABASE\n`, err.message));
+};
+
+const closeDb = () => {
+  return connection
+    .close()
+    .then(() => info("Database closed successfully"))
+    .catch((err) => error("ERROR CLOSING DATABASE: ", err.message));
+};
+
+const getAllBlogs = () => {
+  callDb();
+  return Blog.find();
+};
+const newBlog = (blog) => {
+  callDb();
+  return new Blog(blog);
+};
 
 module.exports = {
   getAllBlogs,
   newBlog,
+  closeDb,
 };

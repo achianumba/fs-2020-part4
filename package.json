@@ -4,20 +4,26 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index",
-    "dev": "nodemon index",
-    "lint": "eslint ."
+    "start": "cross-env NODE_ENV=production node index",
+    "dev": "cross-env NODE_ENV=development nodemon index",
+    "lint": "eslint .",
+    "test": "cross-env NODE_ENV=test jest --verbose --runInBand"
   },
   "author": "Arinze Chianumba",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
+    "cross-env": "^7.0.2",
     "express": "^4.17.1",
     "mongoose": "^5.9.11"
   },
   "devDependencies": {
-    "nodemon": "2.0.2",
     "dotenv": "^8.2.0",
-    "eslint": "^6.8.0"
+    "eslint": "^6.8.0",
+    "jest": "^25.5.4",
+    "nodemon": "2.0.2"
+  },
+  "jest": {
+    "testEnvironment": "node"
   }
 }
