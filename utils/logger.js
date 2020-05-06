@@ -1,9 +1,11 @@
 const info = (...args) => {
-    console.log(...args, '\n')
-}
+  if (process.env.NODE_ENV !== "test") {
+    console.log(...args, "\n");
+  }
+};
 
 const error = (...args) => {
-    console.error(...args, '\n');
-}
+  console.error(...args, "\n");
+};
 
 module.exports = { info, error };
