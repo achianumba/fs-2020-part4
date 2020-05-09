@@ -1,7 +1,7 @@
 const { favoriteBlog } = require("../utils/list_helper");
-const { blogs } = require("../utils/vars");
+const { blogs } = require("./blog/blogs-api_helper");
 
-describe("Favorite blog", () => {
+describe("Favourite blog", () => {
   test("returns zero for an empty blog list", () => {
     expect(favoriteBlog([])).toEqual(0);
   });

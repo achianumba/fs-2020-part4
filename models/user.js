@@ -76,7 +76,7 @@ const saveMany = async (arr) => {
   return User.insertMany(arr);
 };
 
-const deleteAll = () => {
+const deleteAllUsers = () => {
   callDb();
   return User.deleteMany({});
 };
@@ -85,7 +85,7 @@ module.exports = {
   callDb,
   newUser,
   saveMany,
-  deleteAll,
+  deleteAllUsers,
   getAllUsers,
   getUserById,
   updateUserById,

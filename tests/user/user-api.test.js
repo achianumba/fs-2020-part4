@@ -1,6 +1,6 @@
 const supertest = require("supertest");
 const api = supertest(require("../../app"));
-const { deleteAll } = require("../../models/user");
+const { deleteAllUsers } = require("../../models/user");
 const {
   invalidUsername,
   invalidName,
@@ -9,7 +9,7 @@ const {
 } = require("./user_helper");
 
 beforeAll(async () => {
-  await deleteAll();
+  await deleteAllUsers();
 });
 
 test("Creating a user with an invalid username fails", async () => {
@@ -32,15 +32,11 @@ test("Creating a user with an invalid password fails", async () => {
 });
 
 test("Creating a user with valid credentials is successful", async () => {
-  const validUserRequest = await api
-    .post("/api/users")
-    .send(users[0]);
+  const validUserRequest = await api.post("/api/users").send(users[0]);
   expect(validUserRequest.status).toBe(200);
 });
 
 test("Duplicate usernames are not allowed", async () => {
-  const duplicateValidUserRequest = await api
-    .post("/api/users")
-    .send(users[0]);
+  const duplicateValidUserRequest = await api.post("/api/users").send(users[0]);
   expect(duplicateValidUserRequest.status).toBe(400);
 });

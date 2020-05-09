@@ -18,6 +18,7 @@ blogRouter.get("/", (request, response) => {
 
 blogRouter.post("/", async (request, response) => {
   const blog = request.body;
+
   if (!blog.title || !blog.url) {
     response.status(400).json({
       error:
@@ -26,64 +27,102 @@ blogRouter.post("/", async (request, response) => {
   } else {
     //request.token is defined by the middleware defined in ../utils/middleware
     //verify token using jsonwebtoken.verify()
-    const decodedToken = verify(request.token, process.env.SECRET);
-
-    //prevent users without a token (not logged in) from creating blogs
-    if (!request.token || !decodedToken) {
-      return response.status(401).json({ error: "Only logged in users can create blogs" });
+    const token = request.token;
+    //reject non-logged in users' create requests
+    if (!token) {
+      return response
+        .status(401)
+        .json({ error: "Only logged in users can create blogs" });
     }
 
-    const savedBlog = await newBlog(blog).save();
+    //verify user login status with jsonwebtoken.verify()
+    verify(token, process.env.SECRET, async (err, decodedToken) => {
+      if (err) {
+        return response.status(401).json({ error: "Unauthorized user" });
+      }
 
-    //add blog id to corresponding user's blog array in users db
-    //notice the user's id is taken from the decoded token
-    await updateUserById(decodedToken.id, {
-      $push: { blogs: savedBlog._id },
+      //give logged in users access
+      const savedBlog = await newBlog(blog).save();
+
+      //add blog id to corresponding user's blog array in users db
+      //notice the user's id is taken from the decoded token
+      await updateUserById(decodedToken.id, {
+        $push: { blogs: savedBlog._id },
+      });
+
+      closeDb();
+      response.status(201).json(savedBlog);
     });
-
-    closeDb();
-    response.status(201).json(savedBlog);
   }
 });
 
 blogRouter.put("/:id", async (request, response) => {
   const blogId = request.params.id;
   //allow only blog creator to update it
+  //verify token using jsonwebtoken.verify()
   const token = request.token;
-  const verifiedToken = verify(token, process.env.SECRET);
-
-  if (!token || !verifiedToken) {
-    return response.status(401).json({ error: "Only logged in users can update a blog" });
-  }
-  //check if the current user created the blog
-  const blog = await getBlogById(blogId);
-  //if false
-  if (!(blog.user.toString() === verifiedToken.id)) {
-    return response.status(401).json({ error: "You are not allowed to update this blog" });
+  //reject non-logged in users' delete requests
+  if (!token) {
+    return response
+      .status(401)
+      .json({ error: "Only logged in users can update blogs" });
   }
 
-  let updatedBlog = await updateBlog(blogId, request.body);
-  response.json(updatedBlog);
+  //verify user login status with jsonwebtoken.verify()
+  verify(token, process.env.SECRET, async (err, decodedToken) => {
+    if (err) {
+      return response
+        .status(401)
+        .json({ error: "Only the creator can update a blog blog" });
+    }
+
+    //check if the current user created the blog
+    const blog = await getBlogById(blogId);
+
+    if (blog === null)
+      return response.status(404).json({ error: "Blog not found" });
+    //if false
+    if (!(blog.user.toString() === decodedToken.id)) {
+      return response
+        .status(401)
+        .json({ error: "You are not allowed to update this blog" });
+    }
+    //else upade
+    let updatedBlog = await updateBlog(blogId, request.body);
+    response.json(updatedBlog);
+  });
 });
-
+/* 
+=============================
+DELETE USER
+=============================
+ */
 blogRouter.delete("/:id", async (request, response) => {
   const blogId = request.params.id;
-  //allow only blog creator to delete it
   const token = request.token;
-  const verifiedToken = verify(token, process.env.SECRET);
 
-  if (!token || !verifiedToken) {
-    return response.status(401).json({ error: "Only logged in users can delete a blog" });
+  if (!token) {
+    return response
+      .status(401)
+      .json({ error: "Only logged in users can delete a blog" });
   }
-  //check if the current user created the blog
-  const blog = await getBlogById(blogId);
-  //if false
-  if (!(blog.user.toString() === verifiedToken.id)) {
-    return response.status(401).json({ error: "You are not allowed to delete this blog" });
-  }
-  // if true, delete blog
-  await deleteBlog(blogId);
-  response.status(204).end();
+
+  verify(token, process.env.SECRET, async (err, decodedToken) => {
+    const unauthorized = { error: "You are not allowed to delete this blog" };
+
+    if (err) return response.status(401).json(unauthorized);
+
+    const blog = await getBlogById(blogId);
+
+    if (!blog) return response.status(404).json({ error: "Blog not found" });
+
+    const isCreator = blog.user.toString() === decodedToken.id;
+    //if not creator
+    if (!isCreator) return response.status(401).json(unauthorized);
+    // if true, delete blog
+    await deleteBlog(blogId);
+    return response.status(204).end();
+  });
 });
 
 module.exports = blogRouter;
