@@ -66,7 +66,7 @@ const deleteBlog = (id) => {
   return Blog.findByIdAndDelete(id);
 };
 
-const deleteAll = async () => {
+const deleteAllBlogs = async () => {
   callDb();
   await Blog.deleteMany({});
   return closeDb();
@@ -78,6 +78,6 @@ module.exports = {
   newBlog,
   updateBlog,
   deleteBlog,
-  deleteAll,
+  deleteAllBlogs,
   closeDb,
 };
