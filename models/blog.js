@@ -46,6 +46,11 @@ const getAllBlogs = () => {
   return Blog.find().populate("user", { username: 1, name: 1, id: 1});
 };
 
+const getBlogById = id => {
+  callDb();
+  return Blog.findById(id).populate("users");
+}
+
 const newBlog = (blog) => {
   callDb();
   return new Blog(blog);
@@ -69,6 +74,7 @@ const deleteAll = async () => {
 
 module.exports = {
   getAllBlogs,
+  getBlogById,
   newBlog,
   updateBlog,
   deleteBlog,
