@@ -6,10 +6,17 @@ const blogSchema = new Schema({
   author: String,
   url: String,
   likes: { type: Number, default: 0 },
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: "User"
+  },
 });
 
+//handle deprecation warnings
+set(`useFindAndModify`, false);
+
 blogSchema.set("toJSON", {
-  transform: function (document, returnedObject) {
+  transform: (document, returnedObject) => {
     returnedObject.id = returnedObject._id.toString();
     delete returnedObject._id;
     delete returnedObject.__v;
@@ -17,9 +24,6 @@ blogSchema.set("toJSON", {
 });
 
 const Blog = model("Blog", blogSchema);
-
-//handle deprecation warnings
-set(`useFindAndModify`, false);
 
 const callDb = () => {
   return connect(require("../utils/config").MONGO_URI, {
@@ -39,7 +43,7 @@ const closeDb = () => {
 
 const getAllBlogs = () => {
   callDb();
-  return Blog.find();
+  return Blog.find().populate("user", { username: 1, name: 1, id: 1});
 };
 
 const newBlog = (blog) => {
@@ -57,10 +61,11 @@ const deleteBlog = (id) => {
   return Blog.findByIdAndDelete(id);
 };
 
-const deleteAll = () => {
+const deleteAll = async () => {
   callDb();
-  return Blog.deleteMany({});
-}
+  await Blog.deleteMany({});
+  return closeDb();
+};
 
 module.exports = {
   getAllBlogs,

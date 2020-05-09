@@ -8,6 +8,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 //Blog routes
 app.use("/api/blogs", require("./controllers/blog"));
+//User routes
+app.use("/api/users", require("./controllers/users"));
+//login
+app.use("/api/login", require("./controllers/login"))
 
 //error handler
 app.use((err, req, res, next) => {

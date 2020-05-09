@@ -6,11 +6,9 @@ const { blogs, oneBlog } = require("../utils/vars");
 //create a super agent by wrapping express app in superset
 const api = supertest(app);
 
-//runs before each test
-beforeEach(async () => {
-  //clear database to ensure quality assurance
+//runs before all tests in this file
+beforeAll(async () => {
   await deleteAll();
-  await closeDb();
   await api.post("/api/blogs").send(blogs[0]);
   await api.post("/api/blogs").send(blogs[1]);
   await api.post("/api/blogs").send(blogs[2]);
@@ -22,36 +20,24 @@ test("The correct number of blogs are returned in json format", async () => {
   expect(res.body).toHaveLength(3);
 });
 
-test("Each blog's id property is defined", async () => {
+test("Blog id property is defined", async () => {
   let res = await api.get("/api/blogs");
-  res.body.forEach(({ id }) => expect(id).toBeDefined());
-});
-
-test("Missing 'likes' property return 0", async () => {
-  const missingLike = {
-    title: oneBlog.title,
-    author: oneBlog.author,
-    url: oneBlog.url,
-  };
-
-  const res = await api.post("/api/blogs").send(missingLike);
-  expect(res.body.likes).toBe(0);
+  res.body.map(({ id }) => expect(id).toBeDefined())
 });
 
 describe("Authors can", () => {
   test("Create a new blog which increments the blog count", async () => {
     let res = await api.post("/api/blogs").send(oneBlog);
-    expect(res.body.title).toBe(oneBlog.title);
     let allBlogs = await api.get("/api/blogs");
+    expect(res.body.title).toBe(oneBlog.title);
     expect(allBlogs.body).toHaveLength(blogs.length + 1);
   });
 
   test("Update a blog", async () => {
     const getBlogs = await api.get("/api/blogs"); //for efficiency, refactor this request only one blog post later.
-    const update = await api
+    await api
       .put(`/api/blogs/${getBlogs.body[0].id}`)
-      .send({ likes: 21 });
-    expect(update.status).toBe(200);
+      .send({ likes: 21 }).expect(200);
   });
 
   test("delete a blog", async () => {
@@ -60,7 +46,13 @@ describe("Authors can", () => {
   });
 });
 
-//jest's function run after all async operations end. mongoose.connection.close() executed here.
-afterAll(() => {
-  closeDb();
+test("Missing 'likes' property return 0", async () => {
+  const missingLike = {
+    title: oneBlog.title,
+    author: oneBlog.author,
+    url: oneBlog.url
+  };
+
+  const res = await api.post("/api/blogs").send(missingLike);
+  expect(res.body.likes).toEqual(0);
 });
