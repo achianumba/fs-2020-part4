@@ -23,27 +23,12 @@ blogRouter.post("/", async (request, response) => {
         "Please ensure that the title and url of the blog post are defined",
     });
   } else {
-    //Ensure only logged in users can add new blogs by:
-    //Retrieving the token sent with the request by checking the authorization header
-    //For this step to succeed, you must have first, set the Authorization header of the client to "Bearer andthevalueofthetokenyouaresending"
-    const getToken = (request) => {
-      const authorization = request.get("authorization");
-      if (
-        authorization &&
-        authorization.toLowerCase().startsWith("bearer")
-      ) {
-        //return only the authorization without the Bearer prefix
-        return authorization.substring(7);
-      } else {
-        return null;
-      }
-    };
-    //set token to token value or null
-    const token = getToken(request);
+    //request.token is defined by the middleware defined in ../utils/middleware
     //verify token using jsonwebtoken.verify()
-    const decodedToken = verify(token, process.env.SECRET);
+    const decodedToken = verify(request.token, process.env.SECRET);
+
     //prevent users without a token (not logged in) from creating blogs
-    if (!token || !decodedToken) {
+    if (!request.token || !decodedToken) {
       return response.status(401).json({ error: "Only logged in users can create blogs" });
     }
 
